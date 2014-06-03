@@ -45,31 +45,64 @@ CSG_Object difference(CSG_Object minuend, CSG_Object subtrahend){
 	if(!subtrahend.hasIntercepted)
 		return minuend;
 
-//------*************----------
-//----*****************--------
-//-----------------------------
+	//------*************----------
+	//----*****************--------
+	//-----------------------------
 	if(subtrahend.t_in < minuend.t_in && subtrahend.t_out > minuend.t_out)
 		return hasNotIntercepted;
 
-//------***************---------
-//--********--------------------
-//----------***********---------
-	if(subtrahend.t_in < minuend.t_in && subtrahend.t_out < minuend.t_out)
+	//------***************---------
+	//--********--------------------
+	//----------***********---------
+	if(subtrahend.t_in <= minuend.t_in && subtrahend.t_out <= minuend.t_out)
 		return CSG_Object(true, subtrahend.t_out, minuend.t_out, -subtrahend.normal_out, minuend.normal_out);
 
-//------*****************-----
-//-----------------********---
-//------***********-----------
+	//------*****************-----
+	//-----------------********---
+	//------***********-----------
 	if(subtrahend.t_in > minuend.t_in && subtrahend.t_out > minuend.t_out)
 		return CSG_Object(true, minuend.t_in, subtrahend.t_in, minuend.normal_in, -subtrahend.normal_in);
 
-//-----****************--------
-//----------******-------------
-//-----*****------*****--------
+	//-----****************--------
+	//----------******-------------
+	//-----*****------*****--------
 	if(subtrahend.t_in > minuend.t_in && subtrahend.t_out < minuend.t_out)
 		return CSG_Object(true, minuend.t_in, subtrahend.t_in, minuend.normal_in, -subtrahend.normal_in);//this is incomplete and should be solved using CSG_Objects' arrays
 
 	return minuend;
+}
+
+
+CSG_Object intersection(CSG_Object left, CSG_Object right){
+	
+	if(!left.hasIntercepted || !right.hasIntercepted)
+		return hasNotIntercepted;
+
+	//----********************------------
+	//----------********------------------
+	//----------********------------------
+	if(left.t_in <= right.t_in && left.t_out >= right.t_out)
+		return right;
+
+	//--------------********-------------
+	//----*********************----------
+	//--------------********-------------
+	if(left.t_in >= right.t_in && left.t_out <= right.t_out)
+		return left;
+
+	//-------***************------------
+	//----------------***********-------
+	//----------------******------------
+	if(left.t_in < right.t_in && left.t_out < right.t_out)
+		return CSG_Object(true, right.t_in, left.t_out, right.normal_in, left.normal_out);
+
+	//----------******************-----
+	//----***********------------------
+	//----------*****------------------
+	if(left.t_in > right.t_in && left.t_out > right.t_out)
+		return CSG_Object(true, left.t_in, right.t_out, left.normal_in, right.normal_out);
+
+	return hasNotIntercepted;
 }
 
 void main(){
@@ -78,12 +111,21 @@ void main(){
 	CSG_Object sphere1 = sphereIntersection(vec3(0.0, 0.0, 0.0), 0.7, camDir);
 	CSG_Object sphere2 = sphereIntersection(vec3(0.75, 0.75, 0.75), 0.85, camDir);
 	CSG_Object sphere3 = sphereIntersection(vec3(-0.25, -0.25, 0.0), 0.55, camDir);
+	CSG_Object sphere4 = sphereIntersection(vec3(0.0, 0.0, 0.0), 0.5, camDir);
+	CSG_Object sphere5 = sphereIntersection(vec3(-0.5, 0.0, 0.0), 0.7, camDir);
+	CSG_Object sphere6 = sphereIntersection(vec3(0.5, 0.0, 0.0), 0.7, camDir);
 
-	CSG_Object difference1 = difference(sphere1, sphere2);
+
+	/*CSG_Object difference1 = difference(sphere1, sphere2);
 	
-	CSG_Object difference2 = difference(difference1, sphere3);
+	CSG_Object difference2 = difference(difference1, sphere3);*/
 
-	CSG_Object finalObject = difference2;
+	
+
+CSG_Object intersection1 = intersection(sphere6, sphere5);
+
+	CSG_Object finalObject = intersection1;
+
 
 	if(!finalObject.hasIntercepted)
 		discard;
