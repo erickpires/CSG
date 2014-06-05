@@ -169,11 +169,33 @@ void main(){
 		discard;
 
 	
+	float ambientContribution = 0.15;
+	float difuseContribution = 0.35;
+	float specularContribution = 0.4;
+
+
+	vec4 modelIntersectionPoint;
+	modelIntersectionPoint.xyz = camPos + (finalObject.t_in * camDir);
+	modelIntersectionPoint.w = 1.0;
+	vec4 viewCamPos = gl_ModelViewMatrix * modelIntersectionPoint;
+
 	vec3 lightDir = normalize(gl_LightSource[0].position.xyz);
+	
+	//Difuse light
+	float difuseComponent = max(dot(lightDir, finalObject.normal_in), 0.0);	
 
-	float difuseComponent = max(dot(lightDir, finalObject.normal_in), 0.0);
+	//Specular light
+	vec3 reflectedLight = reflect(normalize(lightDir), finalObject.normal_in);
 
-	vec3 color = 0.2 * vec3(1.0, 0.0, 0.0) + 0.8 * difuseComponent * vec3(1.0, 0.0, 0.0);
+	float specularCos = max(dot(reflectedLight, normalize(viewCamPos.xyz)), 0.0);
+	float specularComponent = pow(specularCos, 16.0);
+ 	vec3 specularColor = vec3(1.0, 1.0, 1.0);
+	
+	
+
+	vec3 color = ambientContribution * vec3(1.0, 0.0, 0.0)
+							 + difuseContribution * difuseComponent * vec3(1.0, 0.0, 0.0)
+							 + specularContribution * specularComponent * specularColor;
 
 	gl_FragColor.rgb  = color;
 	gl_FragColor.a = 1.0;
