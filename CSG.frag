@@ -81,25 +81,25 @@ CSG_Object intersection(CSG_Object left, CSG_Object right){
 	//----********************------------
 	//----------********------------------
 	//----------********------------------
-	if(left.t_in <= right.t_in && left.t_out >= right.t_out)
+	if(left.t_in < right.t_in && left.t_out > right.t_out)
 		return right;
 
 	//--------------********-------------
 	//----*********************----------
 	//--------------********-------------
-	if(left.t_in >= right.t_in && left.t_out <= right.t_out)
+	if(left.t_in > right.t_in && left.t_out < right.t_out)
 		return left;
 
 	//-------***************------------
 	//----------------***********-------
 	//----------------******------------
-	if(left.t_in < right.t_in && left.t_out < right.t_out)
+	if(left.t_in < right.t_in && left.t_out < right.t_out && left.t_out > right.t_in)
 		return CSG_Object(true, right.t_in, left.t_out, right.normal_in, left.normal_out);
 
 	//----------******************-----
 	//----***********------------------
 	//----------*****------------------
-	if(left.t_in > right.t_in && left.t_out > right.t_out)
+	if(left.t_in > right.t_in && left.t_out > right.t_out && left.t_in < right.t_out)
 		return CSG_Object(true, left.t_in, right.t_out, left.normal_in, right.normal_out);
 
 	return hasNotIntercepted;
@@ -142,6 +142,8 @@ void main(){
 	CSG_Object sphere6 = sphereIntersection(vec3(0.5, 0.0, 0.0), 0.5, camDir);
 	CSG_Object sphere7 = sphereIntersection(vec3(0.0, 0.0, 0.5), 0.5, camDir);
 	CSG_Object sphere8 = sphereIntersection(vec3(0.0, 0.0, -0.5), 0.5, camDir);
+	CSG_Object sphere9 = sphereIntersection(vec3(-0.5, 0.0, 0.0), 0.7, camDir);
+	CSG_Object sphere10 = sphereIntersection(vec3(0.5, 0.0, 0.0), 0.7, camDir);
 
 
 	CSG_Object difference1 = difference(sphere1, sphere2);
@@ -150,15 +152,17 @@ void main(){
 
 	
 
-CSG_Object intersection1 = intersection(sphere6, sphere5);
+	CSG_Object intersection1 = intersection(sphere10, sphere9);
 
-CSG_Object union1 = Union(sphere6, sphere5);
-CSG_Object union2 = Union(union1, sphere7);
-CSG_Object union3 = Union(union2, sphere8);
+	CSG_Object union1 = Union(sphere6, sphere5);
+	CSG_Object union2 = Union(union1, sphere7);
+	CSG_Object union3 = Union(union2, sphere8);
 
-CSG_Object difference3 = difference(union3, sphere4);
+	CSG_Object difference3 = difference(union3, sphere4);
 
-	CSG_Object finalObject = difference3;
+	CSG_Object union4 = Union(difference3, intersection1);
+
+	CSG_Object finalObject = union4;
 
 
 	if(!finalObject.hasIntercepted)

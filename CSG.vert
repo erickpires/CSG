@@ -12,5 +12,5 @@ void main ()
 	vec4 vertice;
   vertice.xyz = enterPoint;
 
-	gl_Position = gl_ProjectionMatrix*gl_ModelViewMatrix*vertice;
+	gl_Position = ftransform();
 }
