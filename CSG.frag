@@ -7,12 +7,13 @@ struct CSG_Object {
 	float t_out;
 	vec3 normal_in;
 	vec3 normal_out;
+	vec3 color;
 };
 
-CSG_Object hasNotIntercepted = CSG_Object(false, 0.0, 0.0, vec3(0.0), vec3(0.0));
+CSG_Object hasNotIntercepted = CSG_Object(false, 0.0, 0.0, vec3(0.0), vec3(0.0), vec3(0.0));
 
 
-CSG_Object sphereIntersection(vec3 sphereCenter, float sphereRadius, vec3 rayDir){
+CSG_Object sphereIntersection(vec3 sphereCenter, float sphereRadius, vec3 color, vec3 rayDir){
 
 	float a = dot(rayDir, rayDir);
 	float b = dot(rayDir, camPos - sphereCenter);
@@ -34,7 +35,7 @@ CSG_Object sphereIntersection(vec3 sphereCenter, float sphereRadius, vec3 rayDir
 	vec3 normal_out = normalize(interceptionPoint_out - sphereCenter);
 	normal_out = gl_NormalMatrix * normal_out;
 
-	return CSG_Object(true, t_in, t_out, normal_in, normal_out);
+	return CSG_Object(true, t_in, t_out, normal_in, normal_out, color);
 }
 
 CSG_Object difference(CSG_Object minuend, CSG_Object subtrahend){
@@ -55,19 +56,19 @@ CSG_Object difference(CSG_Object minuend, CSG_Object subtrahend){
 	//--********--------------------
 	//----------***********---------
 	if(subtrahend.t_in <= minuend.t_in && subtrahend.t_out <= minuend.t_out)
-		return CSG_Object(true, subtrahend.t_out, minuend.t_out, -subtrahend.normal_out, minuend.normal_out);
+		return CSG_Object(true, subtrahend.t_out, minuend.t_out, -subtrahend.normal_out, minuend.normal_out, minuend.color);
 
 	//------*****************-----
 	//-----------------********---
 	//------***********-----------
 	if(subtrahend.t_in > minuend.t_in && subtrahend.t_out > minuend.t_out)
-		return CSG_Object(true, minuend.t_in, subtrahend.t_in, minuend.normal_in, -subtrahend.normal_in);
+		return CSG_Object(true, minuend.t_in, subtrahend.t_in, minuend.normal_in, -subtrahend.normal_in, minuend.color);
 
 	//-----****************--------
 	//----------******-------------
 	//-----*****------*****--------
 	if(subtrahend.t_in > minuend.t_in && subtrahend.t_out < minuend.t_out)
-		return CSG_Object(true, minuend.t_in, subtrahend.t_in, minuend.normal_in, -subtrahend.normal_in);//this is incomplete and should be solved using CSG_Objects' arrays
+		return CSG_Object(true, minuend.t_in, subtrahend.t_in, minuend.normal_in, -subtrahend.normal_in, minuend.color);//this is incomplete and should be solved using CSG_Objects' arrays
 
 	return minuend;
 }
@@ -94,13 +95,13 @@ CSG_Object intersection(CSG_Object left, CSG_Object right){
 	//----------------***********-------
 	//----------------******------------
 	if(left.t_in < right.t_in && left.t_out < right.t_out && left.t_out > right.t_in)
-		return CSG_Object(true, right.t_in, left.t_out, right.normal_in, left.normal_out);
+		return CSG_Object(true, right.t_in, left.t_out, right.normal_in, left.normal_out, right.color);
 
 	//----------******************-----
 	//----***********------------------
 	//----------*****------------------
 	if(left.t_in > right.t_in && left.t_out > right.t_out && left.t_in < right.t_out)
-		return CSG_Object(true, left.t_in, right.t_out, left.normal_in, right.normal_out);
+		return CSG_Object(true, left.t_in, right.t_out, left.normal_in, right.normal_out, left.color);
 
 	return hasNotIntercepted;
 }
@@ -120,10 +121,10 @@ CSG_Object Union(CSG_Object left, CSG_Object right){
 		return left;
 
 	if(left.t_in < right.t_in && left.t_out < right.t_out)
-		return CSG_Object(true, left.t_in, right.t_out, left.normal_in, right.normal_out);
+		return CSG_Object(true, left.t_in, right.t_out, left.normal_in, right.normal_out, left.color);
 
 	if(right.t_in < left.t_in && right.t_out < left.t_out)
-		return CSG_Object(true, right.t_in, left.t_out, right.normal_in, left.normal_out);
+		return CSG_Object(true, right.t_in, left.t_out, right.normal_in, left.normal_out, right.color);
 
 	if(left.t_in < right.t_in)
 		return left;
@@ -132,18 +133,25 @@ CSG_Object Union(CSG_Object left, CSG_Object right){
 }
 
 void main(){
+	vec3 blue = vec3(0.0, 0.0, 1.0);
+	vec3 green = vec3(0.0, 1.0, 0.0);
+	vec3 red = vec3(1.0, 0.0, 0.0);
+	vec3 magenta = vec3(1.0, 0.0, 1.0);
+	vec3 yellow = vec3(1.0, 1.0, 0.0);
+	vec3 cyan = vec3(0.0, 1.0, 1.0);
+
 	vec3 camDir = normalize(enterPoint - camPos);
 
-	CSG_Object sphere1 = sphereIntersection(vec3(0.0, 0.0, 0.0), 1.0, camDir);
-	CSG_Object sphere2 = sphereIntersection(vec3(0.75, 0.75, 0.75), 0.55, camDir);
-	CSG_Object sphere3 = sphereIntersection(vec3(-0.25, -0.25, 0.0), 0.55, camDir);
-	CSG_Object sphere4 = sphereIntersection(vec3(0.0, 0.0, 0.0), 0.5, camDir);
-	CSG_Object sphere5 = sphereIntersection(vec3(-0.5, 0.0, 0.0), 0.5, camDir);
-	CSG_Object sphere6 = sphereIntersection(vec3(0.5, 0.0, 0.0), 0.5, camDir);
-	CSG_Object sphere7 = sphereIntersection(vec3(0.0, 0.0, 0.5), 0.5, camDir);
-	CSG_Object sphere8 = sphereIntersection(vec3(0.0, 0.0, -0.5), 0.5, camDir);
-	CSG_Object sphere9 = sphereIntersection(vec3(-0.5, 0.0, 0.0), 0.7, camDir);
-	CSG_Object sphere10 = sphereIntersection(vec3(0.5, 0.0, 0.0), 0.7, camDir);
+	CSG_Object sphere1 = sphereIntersection(vec3(0.0, 0.0, 0.0), 1.0, blue, camDir);
+	CSG_Object sphere2 = sphereIntersection(vec3(0.75, 0.75, 0.75), 0.55, green, camDir);
+	CSG_Object sphere3 = sphereIntersection(vec3(-0.25, -0.25, 0.0), 0.55, red, camDir);
+	CSG_Object sphere4 = sphereIntersection(vec3(0.0, 0.0, 0.0), 0.5, magenta, camDir);
+	CSG_Object sphere5 = sphereIntersection(vec3(-0.5, 0.0, 0.0), 0.5, yellow, camDir);
+	CSG_Object sphere6 = sphereIntersection(vec3(0.5, 0.0, 0.0), 0.5, magenta, camDir);
+	CSG_Object sphere7 = sphereIntersection(vec3(0.0, 0.0, 0.5), 0.5, blue, camDir);
+	CSG_Object sphere8 = sphereIntersection(vec3(0.0, 0.0, -0.5), 0.5, green, camDir);
+	CSG_Object sphere9 = sphereIntersection(vec3(-0.5, 0.0, 0.0), 0.7, red, camDir);
+	CSG_Object sphere10 = sphereIntersection(vec3(0.5, 0.0, 0.0), 0.7, cyan, camDir);
 
 
 	CSG_Object difference1 = difference(sphere1, sphere2);
@@ -193,8 +201,8 @@ void main(){
 	
 	
 
-	vec3 color = ambientContribution * vec3(1.0, 0.0, 0.0)
-							 + difuseContribution * difuseComponent * vec3(1.0, 0.0, 0.0)
+	vec3 color = ambientContribution * finalObject.color
+							 + difuseContribution * difuseComponent * finalObject.color
 							 + specularContribution * specularComponent * specularColor;
 
 	gl_FragColor.rgb  = color;
