@@ -1,5 +1,9 @@
+#define M_PI 3.1415926535897932384626433832795
+
 varying vec3 enterPoint;
 varying vec3 camPos;
+
+uniform sampler2D sampler2d0;
 
 struct CSG_Object {
 	bool hasIntercepted;
@@ -14,6 +18,7 @@ CSG_Object hasNotIntercepted = CSG_Object(false, 0.0, 0.0, vec3(0.0), vec3(0.0),
 
 
 CSG_Object sphereIntersection(vec3 sphereCenter, float sphereRadius, vec3 color, vec3 rayDir){
+	vec2 textCoord;
 
 	float a = dot(rayDir, rayDir);
 	float b = dot(rayDir, camPos - sphereCenter);
@@ -29,11 +34,22 @@ CSG_Object sphereIntersection(vec3 sphereCenter, float sphereRadius, vec3 color,
 
 	vec3 interceptionPoint_in = camPos + (rayDir * t_in);
 	vec3 normal_in = normalize(interceptionPoint_in - sphereCenter);
+	
+	//http://en.wikibooks.org/wiki/GLSL_Programming/GLUT/Textured_Spheres
+	textCoord.x = (atan(-normal_in.y, -normal_in.x)/M_PI + 1.0) * 0.5;
+	textCoord.y = asin(-normal_in.z)/M_PI + 0.5;
 	normal_in = gl_NormalMatrix * normal_in;	
 
 	vec3 interceptionPoint_out = camPos + (rayDir * t_out);
 	vec3 normal_out = normalize(interceptionPoint_out - sphereCenter);
 	normal_out = gl_NormalMatrix * normal_out;
+
+	
+	color = texture2D(sampler2d0, textCoord).rgb;
+	
+/*
+	color.rg = textCoord;
+	color.b = 0;*/
 
 	return CSG_Object(true, t_in, t_out, normal_in, normal_out, color);
 }
@@ -84,7 +100,7 @@ void main(){
 	vec3 camDir = normalize(enterPoint - camPos);
 
 	CSG_Object sphere1 = sphereIntersection(vec3(0.0, 0.0, 0.0), 1.0, blue, camDir);
-	CSG_Object sphere2 = sphereIntersection(vec3(0.75, 0.75, 0.75), 0.55, green, camDir);
+	CSG_Object sphere2 = sphereIntersection(vec3(0.75, 0.75, 0.57), 0.4, green, camDir);
 	
 
 

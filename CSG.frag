@@ -190,7 +190,7 @@ CSG_Object cubeIntersection(vec3 center, float faceSize, vec3 originPoint, vec3 
 		interceptionPoint_out = interceptionPoint_in;
 		normal_out = normal_in;
 	}
-	else if (interceptionPoint_in == vec3(0.0,0.0,0.0) && interceptionPoint_out == vec3(0.0,0.0,0.0)) return hasNotIntercepted;
+	if (interceptionPoint_in == vec3(0.0,0.0,0.0) && interceptionPoint_out == vec3(0.0,0.0,0.0)) return hasNotIntercepted;
 	
 	return CSG_Object(true, t_in, t_out, normal_in, normal_out);
 }
@@ -345,7 +345,7 @@ void main(){
 	CSG_Object union4 = Union(difference3, intersection1);
 
 	//CSG_Object finalObject = union4;
-	CSG_Object finalObject = cubeIntersection(vec3(0.1, 0.2, 0.1), 1.0, vec3(0.0,0.0,0.0), camDir);
+	CSG_Object finalObject = cubeIntersection(vec3(0.0, 0.0, 0.0), 0.5, camPos, camDir);
 
 	if(!finalObject.hasIntercepted)
 		discard;
