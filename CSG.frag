@@ -344,8 +344,8 @@ void main(){
 
 	CSG_Object union4 = Union(difference3, intersection1);
 
-	//CSG_Object finalObject = union4;
-	CSG_Object finalObject = cubeIntersection(vec3(0.0, 0.0, 0.0), 0.5, camPos, camDir);
+	CSG_Object finalObject = union4;
+	//CSG_Object finalObject = cubeIntersection(vec3(0.0, 0.0, 0.0), 0.5, camPos, camDir);
 
 	if(!finalObject.hasIntercepted)
 		discard;

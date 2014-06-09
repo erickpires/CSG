@@ -1,199 +1,293 @@
-
 public class CodeStorage {
-	public static final String begin = "varying vec3 enterPoint;\n " +
-	"varying vec3 camPos;\n" +
-	"\n" +
-	"struct CSG_Object {\n" +
-	"	bool hasIntercepted;\n" +
-	"	float t_in;\n" +
-	"	float t_out;\n" +
-	"	vec3 normal_in;\n" +
-	"	vec3 normal_out;\n" +
-	"	vec3 color;\n" +
-	"};\n" +
-	"\n" +
-	"CSG_Object hasNotIntercepted = CSG_Object(false, 0.0, 0.0, vec3(0.0), vec3(0.0), vec3(0.0));\n" +
-	"\n" +
-	"CSG_Object sphereIntersection(vec3 sphereCenter, float sphereRadius, vec3 color, vec3 rayDir){\n" +
-	"\n" +
-	"	float a = dot(rayDir, rayDir);\n" +
-	"	float b = dot(rayDir, camPos - sphereCenter);\n" +
-	"	float c = dot(camPos - sphereCenter, camPos - sphereCenter) - sphereRadius * sphereRadius;\n" +
-	"\n" +
-	"	float delta = b * b - a * c;\n" +
-	"\n" +
-	"	if(delta < 0.0)\n" +
-	"		return hasNotIntercepted;\n" +
-	"\n" +
-	"	float t_in = (-b - sqrt(delta)) / a;\n" +
-	"	float t_out = (-b + sqrt(delta)) / a;\n" +
-	"\n" +
-	"	vec3 interceptionPoint_in = camPos + (rayDir * t_in);\n" +
-	"	vec3 normal_in = normalize(interceptionPoint_in - sphereCenter);\n" +
-	"	normal_in = gl_NormalMatrix * normal_in;\n" +
-	"\n" +
-	"	vec3 interceptionPoint_out = camPos + (rayDir * t_out);\n" +
-	"	vec3 normal_out = normalize(interceptionPoint_out - sphereCenter);\n" +
-	"	normal_out = gl_NormalMatrix * normal_out;\n" +
-	"\n" +
-	"	return CSG_Object(true, t_in, t_out, normal_in, normal_out, color);\n" +
-	"}\n" +
-	"\n" +
-	"CSG_Object difference(CSG_Object minuend, CSG_Object subtrahend){\n" +
-	"\n" +
-	"	if(!minuend.hasIntercepted)\n" +
-	"		return hasNotIntercepted;\n" +
-	"\n" +
-	"	if(!subtrahend.hasIntercepted)\n" +
-	"		return minuend;\n" +
-	"\n" +
-	"	//------*************----------\n" +
-	"	//----*****************--------\n" +
-	"	//-----------------------------\n" +
-	"	if(subtrahend.t_in < minuend.t_in && subtrahend.t_out > minuend.t_out)\n" +
-	"		return hasNotIntercepted;\n" +
-	"\n" +
-	"	//------***************---------\n" +
-	"	//--********--------------------\n" +
-	"	//----------***********---------\n" +
-	"	if(subtrahend.t_in <= minuend.t_in && subtrahend.t_out <= minuend.t_out)\n" +
-	"		return CSG_Object(true, subtrahend.t_out, minuend.t_out, -subtrahend.normal_out, minuend.normal_out, minuend.color);\n" +
-	"\n" +
-	"	//------*****************-----\n" +
-	"	//-----------------********---\n" +
-	"	//------***********-----------\n" +
-	"	if(subtrahend.t_in > minuend.t_in && subtrahend.t_out > minuend.t_out)\n" +
-	"		return CSG_Object(true, minuend.t_in, subtrahend.t_in, minuend.normal_in, -subtrahend.normal_in, minuend.color);\n" +
-	"\n" +
-	"	//-----****************--------\n" +
-	"	//----------******-------------\n" +
-	"	//-----*****------*****--------\n" +
-	"	if(subtrahend.t_in > minuend.t_in && subtrahend.t_out < minuend.t_out)\n" +
-	"		return CSG_Object(true, minuend.t_in, subtrahend.t_in, minuend.normal_in, -subtrahend.normal_in, minuend.color);\n" +
-	"\n" +
-	"	return minuend;\n" +
-	"}\n" +
-	"\n" +
-	"CSG_Object intersection(CSG_Object left, CSG_Object right){\n" +
-	"\n" +		
-	"	if(!left.hasIntercepted || !right.hasIntercepted)\n" +
-	"		return hasNotIntercepted;\n" +
-	"\n" +
-	"	//----********************------------\n" +
-	"	//----------********------------------\n" +
-	"	//----------********------------------\n" +
-	"	if(left.t_in < right.t_in && left.t_out > right.t_out)\n" +
-	"		return right;\n" +
-	"\n" +
-	"	//--------------********-------------\n" +
-	"	//----*********************----------\n" +
-	"	//--------------********-------------\n" +
-	"	if(left.t_in > right.t_in && left.t_out < right.t_out)\n" +
-	"		return left;\n" +
-	"\n" +
-	"	//-------***************------------\n" +
-	"	//----------------***********-------\n" +
-	"	//----------------******------------\n" +
-	"	if(left.t_in < right.t_in && left.t_out < right.t_out && left.t_out > right.t_in)\n" +
-	"		return CSG_Object(true, right.t_in, left.t_out, right.normal_in, left.normal_out, right.color);\n" +
-	"\n" +
-	"	//----------******************-----\n" +
-	"	//----***********------------------\n" +
-	"	//----------*****------------------\n" +
-	"	if(left.t_in > right.t_in && left.t_out > right.t_out && left.t_in < right.t_out)\n" +
-	"		return CSG_Object(true, left.t_in, right.t_out, left.normal_in, right.normal_out, left.color);\n" +
-	"\n" +
-	"	return hasNotIntercepted;\n" +
-	"}\n" +
-	"\n" +
-	"CSG_Object Union(CSG_Object left, CSG_Object right){\n" +
-	"\n" +
-	"	//-----------------------------\n" +
-	"	//----------**************-----\n" +
-	"	//----------**************-----\n" +
-	"	if(!left.hasIntercepted)\n" +
-	"		return right;\n" +
-	"\n" +
-	"	//----************-------------\n" +
-	"	//-----------------------------\n" +
-	"	//----************-------------\n" +
-	"	if(!right.hasIntercepted)\n" +
-	"		return left;\n" +
-	"\n" +
-	"	//----------********------------\n" +
-	"	//------****************--------\n" +
-	"	//------****************--------\n" +
-	"	if(left.t_in > right.t_in && left.t_out < right.t_out)\n" +
-	"		return right;\n" +
-	"\n" +
-	"	//--***************-------------\n" +
-	"	//-------*****------------------\n" +
-	"	//--***************-------------\n" +
-	"	if(left.t_in <= right.t_in && left.t_out >= right.t_out)\n" +
-	"		return left;\n" +
-	"\n" +
-	"	//----************--------------\n" +
-	"	//----------*************-------\n" +
-	"	//----*******************-------\n" +
-	"	if(left.t_in < right.t_in && left.t_out < right.t_out)\n" +
-	"		return CSG_Object(true, left.t_in, right.t_out, left.normal_in, right.normal_out, left.color);\n" +
-	"\n" +
-	"	//-------------**************--\n" +
-	"	//------***********------------\n" +
-	"	//------*********************--\n" +
-	"	if(right.t_in < left.t_in && right.t_out < left.t_out)\n" +
-	"		return CSG_Object(true, right.t_in, left.t_out, right.normal_in, left.normal_out, right.color);\n" +
-	"\n" +
-	"	//---********------------------\n" +
-	"	//---------------******--------\n" +
-	"	//---********------------------\n" +
-	"	if(left.t_in < right.t_in)\n" +
-	"		return left;\n" +
-	"\n" +
-	"	//------------------*******----\n" +
-	"	//-----*********---------------\n" +
-	"	//-----*********---------------\n" +
-	"	return right;\n" +
-	"}\n" +
-	"\n" +
-	"void main(){\n" +
-	"\n" +
-	"CSG_Object finalObject;" +
-	"\n" +
-	"vec3 camDir = normalize(enterPoint - camPos);";
-	
-	
-	public static final String end = "\n" +
-	"	if(!finalObject.hasIntercepted)\n" +
-	"		discard;\n" +
-	"\n" +
-	"	// Light and Colors\n" +	
-	"	float ambientContribution = 0.15;\n" +
-	"	float difuseContribution = 0.35;\n" +
-	"	float specularContribution = 0.4;\n" +
-	"\n" +
-	"	vec4 modelIntersectionPoint;\n" +
-	"	modelIntersectionPoint.xyz = camPos + (finalObject.t_in * camDir);\n" +
-	"	modelIntersectionPoint.w = 1.0;\n" +
-	"	vec4 viewCamPos = gl_ModelViewMatrix * modelIntersectionPoint;\n" +
-	"\n" +
-	"	vec3 lightDir = normalize(gl_LightSource[0].position.xyz);\n" +
-	"\n" +
-	"	//Difuse light\n" +
-	"	float difuseComponent = max(dot(lightDir, finalObject.normal_in), 0.0);\n" +	
-	"\n" +
-	"	//Specular light\n" +
-	"	vec3 reflectedLight = reflect(normalize(lightDir), finalObject.normal_in);\n" +
-	"\n" +
-	"	float specularCos = max(dot(reflectedLight, normalize(viewCamPos.xyz)), 0.0);\n" +
-	"	float specularComponent = pow(specularCos, 16.0);\n" +
- 	"	vec3 specularColor = vec3(1.0, 1.0, 1.0);\n" +
-	"\n" +
-	"	vec3 color = ambientContribution * finalObject.color\n" +
-	"			   + difuseContribution * difuseComponent * finalObject.color\n" +
-	"			   + specularContribution * specularComponent * specularColor;\n" +
-	"\n" +
-	"	gl_FragColor.rgb  = color;\n" +
-	"	gl_FragColor.a = 1.0;\n" +
-"}";
+	public static final String begin = "#define PI 3.1415926535897932384626433832795\n"
+			+"varying vec3 enterPoint;\n "
+			+ "varying vec3 camPos;\n"
+			+ "\n"
+			+ "struct CSG_Object {\n"
+			+ "	bool hasIntercepted;\n"
+			+ "	float t_in;\n"
+			+ "	float t_out;\n"
+			+ "	vec3 normal_in;\n"
+			+ "	vec3 normal_out;\n"
+			+ "	vec3 color;\n"
+			+ "};\n"
+			+ "\n"
+			+ "CSG_Object hasNotIntercepted = CSG_Object(false, 0.0, 0.0, vec3(0.0), vec3(0.0), vec3(0.0));\n"
+			+ "\n"
+			+ "CSG_Object sphereIntersection(vec3 sphereCenter, float sphereRadius, vec3 color, vec3 rayDir){\n"
+			+ "\n"
+			+ "	float a = dot(rayDir, rayDir);\n"
+			+ "	float b = dot(rayDir, camPos - sphereCenter);\n"
+			+ "	float c = dot(camPos - sphereCenter, camPos - sphereCenter) - sphereRadius * sphereRadius;\n"
+			+ "\n"
+			+ "	float delta = b * b - a * c;\n"
+			+ "\n"
+			+ "	if(delta < 0.0)\n"
+			+ "		return hasNotIntercepted;\n"
+			+ "\n"
+			+ "	float t_in = (-b - sqrt(delta)) / a;\n"
+			+ "	float t_out = (-b + sqrt(delta)) / a;\n"
+			+ "\n"
+			+ "	vec3 interceptionPoint_in = camPos + (rayDir * t_in);\n"
+			+ "	vec3 normal_in = normalize(interceptionPoint_in - sphereCenter);\n"
+			+ "	normal_in = gl_NormalMatrix * normal_in;\n"
+			+ "\n"
+			+ "	vec3 interceptionPoint_out = camPos + (rayDir * t_out);\n"
+			+ "	vec3 normal_out = normalize(interceptionPoint_out - sphereCenter);\n"
+			+ "	normal_out = gl_NormalMatrix * normal_out;\n"
+			+ "\n"
+			+ "	return CSG_Object(true, t_in, t_out, normal_in, normal_out, color);\n"
+			+ "}\n"
+			+ "\n"
+			+ "vec3 findNormal(vec3 p1, vec3 p2, vec3 p3, vec3 rayDir)\n"
+			+ "{\n"
+			+ "	vec3 edge1 = normalize(p3-p2);\n"
+			+ "	vec3 edge2 = normalize(p1-p2);\n"
+			+ "\n"
+			+ "	return cross(edge1, edge2);\n"
+			+ "}\n"
+			+ "\n"
+			+ "float parallel(vec3 p1, vec3 p2, vec3 p3, vec3 rayDir)\n"
+			+ "{\n"
+			+ "	vec3 product = findNormal(p1, p2, p3, rayDir);\n"
+			+ "\n"
+			+ "	float angle = acos(dot(normalize(product),normalize(rayDir)));\n"
+			+ "	if(angle == PI/2.0) return 1.0;\n"
+			+ "	else return 0.0;\n"
+			+ "}\n"
+			+ "\n"
+			+ "CSG_Object cubeIntersection(vec3 center, float faceSize, vec3 color, vec3 oriPoi, vec3 rayDir)\n"
+			+ "{\n"
+			+ "	vec3 p0 = vec3(center.x + faceSize/2.0, center.y + faceSize/2.0, center.z + faceSize/2.0);\n"
+			+ "	vec3 p1 = vec3(center.x + faceSize/2.0, center.y + faceSize/2.0, center.z - faceSize/2.0);\n"
+			+ "	vec3 p2 = vec3(center.x + faceSize/2.0, center.y - faceSize/2.0, center.z + faceSize/2.0);\n"
+			+ "	vec3 p3 = vec3(center.x + faceSize/2.0, center.y - faceSize/2.0, center.z - faceSize/2.0);\n"
+			+ "	vec3 p4 = vec3(center.x - faceSize/2.0, center.y + faceSize/2.0, center.z + faceSize/2.0);\n"
+			+ "	vec3 p5 = vec3(center.x - faceSize/2.0, center.y + faceSize/2.0, center.z - faceSize/2.0);\n"
+			+ "	vec3 p6 = vec3(center.x - faceSize/2.0, center.y - faceSize/2.0, center.z + faceSize/2.0);\n"
+			+ "	vec3 p7 = vec3(center.x - faceSize/2.0, center.y - faceSize/2.0, center.z - faceSize/2.0);\n"
+			+ "\n"
+			+ "	float t_near = 0.0, t_far = 0.0, tx1, tx2, ty1, ty2, tz1, tz2;\n"
+			+ "	vec3 normal_in, normal_out;\n"
+			+ "\n"
+			+ "	if(parallel(p0,p1,p2,rayDir) == 0.0)\n"
+			+ "	{\n"
+			+ "		tx1 = (p4.x - oriPoi.x)/rayDir.x;\n"
+			+ "		tx2 = (p0.x - oriPoi.x)/rayDir.x;\n"
+			+ "\n"
+			+ "		if(tx1 > tx2)\n"
+			+ "		{\n"
+			+ "			float temp = tx1;\n"
+			+ "			tx1 = tx2;\n"
+			+ "			tx2 = temp;\n"
+			+ "		}\n"
+			+ "		t_near = tx1;\n"
+			+ "		t_far = tx2;\n"
+			+ "		normal_in = findNormal(p0,p1,p2,rayDir);\n"
+			+ "		normal_out = findNormal(p4,p5,p6,rayDir);\n"
+			+ "	}\n"
+			+ "	if(parallel(p0,p1,p4,rayDir) == 0.0)\n"
+			+ "	{\n"
+			+ "		ty1 = (p7.y - oriPoi.y)/rayDir.y;\n"
+			+ "		ty2 = (p5.y - oriPoi.y)/rayDir.y;\n"
+			+ "\n"
+			+ "		if(ty1 > ty2)\n"
+			+ "		{\n"
+			+ "			float temp = ty1;\n"
+			+ "			ty1 = ty2;\n"
+			+ "			ty2 = temp;\n"
+			+ "		}\n"
+			+ "\n"
+			+ "		if(ty1 > t_near)\n"
+			+ "		{\n"
+			+ "			t_near = ty1;\n"
+			+ "			normal_in = findNormal(p0,p1,p4,rayDir);\n"
+			+ "		}\n"
+			+ "		if(ty2 < t_far)\n"
+			+ "		{\n"
+			+ "			t_far = ty2;\n"
+			+ "			normal_out = findNormal(p2,p3,p6,rayDir);\n"
+			+ "		}\n"
+			+ "	}\n"
+			+ "	if(parallel(p0,p2,p4,rayDir) == 0.0)\n"
+			+ "	{\n"
+			+ "		tz1 = (p7.z - oriPoi.z)/rayDir.z;\n"
+			+ "		tz2 = (p6.z - oriPoi.z)/rayDir.z;\n"
+			+ "\n"
+			+ "		if(tz1 > tz2)\n"
+			+ "		{\n"
+			+ "			float temp = tz1;\n"
+			+ "			tz1 = tz2;\n"
+			+ "			tz2 = temp;\n"
+			+ "		}\n"
+			+ "\n"
+			+ "		if(tz1 > t_near)\n"
+			+ "		{\n"
+			+ "			t_near = tz1;\n"
+			+ "			normal_in = findNormal(p0,p2,p4,rayDir);\n"
+			+ "		}\n"
+			+ "		if(tz2 < t_far)\n"
+			+ "		{\n"
+			+ "			t_far = tz2;\n"
+			+ "			normal_out = findNormal(p5,p3,p1,rayDir);\n"
+			+ "		}\n"
+			+ "	}\n"
+			+ "	if(t_near > t_far) return hasNotIntercepted;\n"
+			+ "\n"
+			+ "	normal_out = -normal_out;\n"
+			+ "	if(dot(normalize(rayDir), normalize(normal_in)) > 0.0){\n"
+			+ "		normal_in = -normal_in;\n"
+			+ "}\n"
+			+ "\n"
+			+ "	normal_in = gl_NormalMatrix * normal_in;\n"
+			+ "	normal_out = gl_NormalMatrix * normal_out;\n"
+			+ "\n"
+			+ "	return CSG_Object(true, t_near, t_far, normal_in, normal_out, color);\n"
+			+ "}\n"
+			+ "\n"
+			+ "CSG_Object difference(CSG_Object minuend, CSG_Object subtrahend){\n"
+			+ "\n"
+			+ "	if(!minuend.hasIntercepted)\n"
+			+ "		return hasNotIntercepted;\n"
+			+ "\n"
+			+ "	if(!subtrahend.hasIntercepted)\n"
+			+ "		return minuend;\n"
+			+ "\n"
+			+ "	//------*************----------\n"
+			+ "	//----*****************--------\n"
+			+ "	//-----------------------------\n"
+			+ "	if(subtrahend.t_in < minuend.t_in && subtrahend.t_out > minuend.t_out)\n"
+			+ "		return hasNotIntercepted;\n"
+			+ "\n"
+			+ "	//------***************---------\n"
+			+ "	//--********--------------------\n"
+			+ "	//----------***********---------\n"
+			+ "	if(subtrahend.t_in <= minuend.t_in && subtrahend.t_out <= minuend.t_out)\n"
+			+ "		return CSG_Object(true, subtrahend.t_out, minuend.t_out, -subtrahend.normal_out, minuend.normal_out, minuend.color);\n"
+			+ "\n"
+			+ "	//------*****************-----\n"
+			+ "	//-----------------********---\n"
+			+ "	//------***********-----------\n"
+			+ "	if(subtrahend.t_in > minuend.t_in && subtrahend.t_out > minuend.t_out)\n"
+			+ "		return CSG_Object(true, minuend.t_in, subtrahend.t_in, minuend.normal_in, -subtrahend.normal_in, minuend.color);\n"
+			+ "\n"
+			+ "	//-----****************--------\n"
+			+ "	//----------******-------------\n"
+			+ "	//-----*****------*****--------\n"
+			+ "	if(subtrahend.t_in > minuend.t_in && subtrahend.t_out < minuend.t_out)\n"
+			+ "		return CSG_Object(true, minuend.t_in, subtrahend.t_in, minuend.normal_in, -subtrahend.normal_in, minuend.color);\n"
+			+ "\n"
+			+ "	return minuend;\n"
+			+ "}\n"
+			+ "\n"
+			+ "CSG_Object intersection(CSG_Object left, CSG_Object right){\n"
+			+ "\n"
+			+ "	if(!left.hasIntercepted || !right.hasIntercepted)\n"
+			+ "		return hasNotIntercepted;\n"
+			+ "\n"
+			+ "	//----********************------------\n"
+			+ "	//----------********------------------\n"
+			+ "	//----------********------------------\n"
+			+ "	if(left.t_in < right.t_in && left.t_out > right.t_out)\n"
+			+ "		return right;\n"
+			+ "\n"
+			+ "	//--------------********-------------\n"
+			+ "	//----*********************----------\n"
+			+ "	//--------------********-------------\n"
+			+ "	if(left.t_in > right.t_in && left.t_out < right.t_out)\n"
+			+ "		return left;\n"
+			+ "\n"
+			+ "	//-------***************------------\n"
+			+ "	//----------------***********-------\n"
+			+ "	//----------------******------------\n"
+			+ "	if(left.t_in < right.t_in && left.t_out < right.t_out && left.t_out > right.t_in)\n"
+			+ "		return CSG_Object(true, right.t_in, left.t_out, right.normal_in, left.normal_out, right.color);\n"
+			+ "\n"
+			+ "	//----------******************-----\n"
+			+ "	//----***********------------------\n"
+			+ "	//----------*****------------------\n"
+			+ "	if(left.t_in > right.t_in && left.t_out > right.t_out && left.t_in < right.t_out)\n"
+			+ "		return CSG_Object(true, left.t_in, right.t_out, left.normal_in, right.normal_out, left.color);\n"
+			+ "\n"
+			+ "	return hasNotIntercepted;\n"
+			+ "}\n"
+			+ "\n"
+			+ "CSG_Object Union(CSG_Object left, CSG_Object right){\n"
+			+ "\n"
+			+ "	//-----------------------------\n"
+			+ "	//----------**************-----\n"
+			+ "	//----------**************-----\n"
+			+ "	if(!left.hasIntercepted)\n"
+			+ "		return right;\n"
+			+ "\n"
+			+ "	//----************-------------\n"
+			+ "	//-----------------------------\n"
+			+ "	//----************-------------\n"
+			+ "	if(!right.hasIntercepted)\n"
+			+ "		return left;\n"
+			+ "\n"
+			+ "	//----------********------------\n"
+			+ "	//------****************--------\n"
+			+ "	//------****************--------\n"
+			+ "	if(left.t_in > right.t_in && left.t_out < right.t_out)\n"
+			+ "		return right;\n"
+			+ "\n"
+			+ "	//--***************-------------\n"
+			+ "	//-------*****------------------\n"
+			+ "	//--***************-------------\n"
+			+ "	if(left.t_in <= right.t_in && left.t_out >= right.t_out)\n"
+			+ "		return left;\n"
+			+ "\n"
+			+ "	//----************--------------\n"
+			+ "	//----------*************-------\n"
+			+ "	//----*******************-------\n"
+			+ "	if(left.t_in < right.t_in && left.t_out < right.t_out)\n"
+			+ "		return CSG_Object(true, left.t_in, right.t_out, left.normal_in, right.normal_out, left.color);\n"
+			+ "\n"
+			+ "	//-------------**************--\n"
+			+ "	//------***********------------\n"
+			+ "	//------*********************--\n"
+			+ "	if(right.t_in < left.t_in && right.t_out < left.t_out)\n"
+			+ "		return CSG_Object(true, right.t_in, left.t_out, right.normal_in, left.normal_out, right.color);\n"
+			+ "\n" + "	//---********------------------\n"
+			+ "	//---------------******--------\n"
+			+ "	//---********------------------\n"
+			+ "	if(left.t_in < right.t_in)\n" + "		return left;\n" + "\n"
+			+ "	//------------------*******----\n"
+			+ "	//-----*********---------------\n"
+			+ "	//-----*********---------------\n" + "	return right;\n" + "}\n"
+			+ "\n" + "void main(){\n" + "\n" + "CSG_Object finalObject;" + "\n"
+			+ "vec3 camDir = normalize(enterPoint - camPos);";
+
+	public static final String end = "\n"
+			+ "	if(!finalObject.hasIntercepted)\n"
+			+ "		discard;\n"
+			+ "\n"
+			+ "	// Light and Colors\n"
+			+ "	float ambientContribution = 0.15;\n"
+			+ "	float difuseContribution = 0.35;\n"
+			+ "	float specularContribution = 0.4;\n"
+			+ "\n"
+			+ "	vec4 modelIntersectionPoint;\n"
+			+ "	modelIntersectionPoint.xyz = camPos + (finalObject.t_in * camDir);\n"
+			+ "	modelIntersectionPoint.w = 1.0;\n"
+			+ "	vec4 viewCamPos = gl_ModelViewMatrix * modelIntersectionPoint;\n"
+			+ "\n"
+			+ "	vec3 lightDir = normalize(gl_LightSource[0].position.xyz);\n"
+			+ "\n"
+			+ "	//Difuse light\n"
+			+ "	float difuseComponent = max(dot(lightDir, finalObject.normal_in), 0.0);\n"
+			+ "\n"
+			+ "	//Specular light\n"
+			+ "	vec3 reflectedLight = reflect(normalize(lightDir), finalObject.normal_in);\n"
+			+ "\n"
+			+ "	float specularCos = max(dot(reflectedLight, normalize(viewCamPos.xyz)), 0.0);\n"
+			+ "	float specularComponent = pow(specularCos, 16.0);\n"
+			+ "	vec3 specularColor = vec3(1.0, 1.0, 1.0);\n"
+			+ "\n"
+			+ "	vec3 color = ambientContribution * finalObject.color\n"
+			+ "			   + difuseContribution * difuseComponent * finalObject.color\n"
+			+ "			   + specularContribution * specularComponent * specularColor;\n"
+			+ "\n" + "	gl_FragColor.rgb  = color;\n"
+			+ "	gl_FragColor.a = 1.0;\n" + "}";
 }

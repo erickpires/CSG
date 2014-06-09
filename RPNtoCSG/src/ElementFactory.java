@@ -6,9 +6,6 @@ public class ElementFactory {
 	
 	public static Element createNew(Iterator<Character> iterator, Stack<Element> elementStack) throws Exception{
 		
-		if(!iterator.hasNext())
-			throw new Exception("Invalid Input");
-		
 		char current = iterator.next();
 		
 		switch (current) {
@@ -23,6 +20,8 @@ public class ElementFactory {
 			
 		case 'S':
 			return new Sphere(iterator);
+		case 'C':
+			return new Cube(iterator);
 		default:
 			throw new Exception("Invalid Input");
 		}
